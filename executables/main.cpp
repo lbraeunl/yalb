@@ -25,7 +25,9 @@ int main(int argc, char *argv[]) {
         Kokkos::View<double**> rho("density", X, Y);
         Kokkos::View<double***> u("velocity", X, Y, 2);
 
-        create_gaussian_blob(rho, u);
+        //create_gaussian_blob(rho, u);
+        //create_uniform_with_bump(rho, u);
+        create_random_fields(rho, u);
         auto distribution = compute_f_eq(rho, u, velocities);
 
         if (rank == 0) {

@@ -3,7 +3,7 @@
 
 inline constexpr int X = 15;
 inline constexpr int Y = 15;
-inline constexpr int NUM_STEPS = 25;
+inline constexpr int NUM_STEPS = 50;
 inline constexpr double TAU = 0.8;
 
 #endif // PARAMETERS_H

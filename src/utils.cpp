@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
+#include <Kokkos_Random.hpp>
 #include <stdexcept>
 
 std::string filename_for_step(int step)
@@ -63,6 +64,48 @@ void create_gaussian_blob(const Kokkos::View<double**>& rho, const Kokkos::View<
             rho(i, j) = background_density * (1.0 + relative_amplitude * gaussian);
             u(i, j, 0) = 0.0;
             u(i, j, 1) = 0.0;
+        });
+}
+
+void create_uniform_with_bump(const Kokkos::View<double**>& rho, const Kokkos::View<double***>& u)
+{
+    constexpr double background_density = 1.0;
+    constexpr double center_density = 1.0;
+    constexpr int center_x = X / 2;
+    constexpr int center_y = Y / 2;
+
+    Kokkos::parallel_for(
+        "initialize_uniform_with_bump",
+        Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0, 0}, {X, Y}),
+        KOKKOS_LAMBDA(const int i, const int j) {
+            rho(i, j) = (i == center_x && j == center_y)
+                ? center_density
+                : background_density;
+            u(i, j, 0) = 1.0;
+            u(i, j, 1) = 0.0;
+        });
+}
+
+void create_random_fields(const Kokkos::View<double**>& rho, const Kokkos::View<double***>& u)
+{
+    constexpr double minimum_density = 0.99;
+    constexpr double maximum_density = 1.01;
+    constexpr double maximum_speed_component = 0.02;
+    constexpr uint64_t random_seed = 20260714;
+
+    Kokkos::Random_XorShift64_Pool<> random_pool(random_seed);
+
+    Kokkos::parallel_for(
+        "initialize_random_fields",
+        Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0, 0}, {X, Y}),
+        KOKKOS_LAMBDA(const int i, const int j) {
+            auto generator = random_pool.get_state();
+
+            rho(i, j) = generator.drand(minimum_density, maximum_density);
+            u(i, j, 0) = generator.drand(-maximum_speed_component, maximum_speed_component);
+            u(i, j, 1) = generator.drand(-maximum_speed_component, maximum_speed_component);
+
+            random_pool.free_state(generator);
         });
 }
 
