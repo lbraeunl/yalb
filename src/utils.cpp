@@ -1,0 +1,117 @@
+#include "utils.h"
+#include "parameters.h"
+
+#include <filesystem>
+#include <fstream>
+#include <iomanip>
+#include <stdexcept>
+
+std::string filename_for_step(int step)
+{
+    const std::filesystem::path filename("out/distribution.csv");
+    return (filename.parent_path() /
+            (filename.stem().string() + "_" + std::to_string(step) + filename.extension().string()))
+        .string();
+}
+
+Kokkos::View<int*[2]> lattice_velocities()
+{
+    Kokkos::View<int*[2]> c("lattice_velocities", 9);
+
+    Kokkos::parallel_for(
+        "initialize_lattice_velocities",
+        Kokkos::RangePolicy<>(0, 9),
+        KOKKOS_LAMBDA(const int q) {
+            switch (q) {
+            case 0: c(q, 0) =  0; c(q, 1) =  0; break;
+            case 1: c(q, 0) =  1; c(q, 1) =  0; break;
+            case 2: c(q, 0) =  0; c(q, 1) =  1; break;
+            case 3: c(q, 0) = -1; c(q, 1) =  0; break;
+            case 4: c(q, 0) =  0; c(q, 1) = -1; break;
+            case 5: c(q, 0) =  1; c(q, 1) =  1; break;
+            case 6: c(q, 0) = -1; c(q, 1) =  1; break;
+            case 7: c(q, 0) = -1; c(q, 1) = -1; break;
+            case 8: c(q, 0) =  1; c(q, 1) = -1; break;
+            }
+        });
+
+    return c;
+}
+
+void create_gaussian_blob(const Kokkos::View<double**>& rho, const Kokkos::View<double***>& u)
+{
+    constexpr double background_density = 1.0;
+    constexpr double relative_amplitude = 0.01;
+
+    const double center_x = 0.5 * (X - 1);
+    const double center_y = 0.5 * (Y - 1);
+    const int smaller_dimension = X < Y ? X : Y;
+    const double sigma = smaller_dimension > 1 ? 0.2 * smaller_dimension : 1.0;
+    const double inverse_two_sigma_squared = 0.5 / (sigma * sigma);
+
+    Kokkos::parallel_for(
+        "initialize_gaussian_blob",
+        Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0, 0}, {X, Y}),
+        KOKKOS_LAMBDA(const int i, const int j) {
+            const double dx = i - center_x;
+            const double dy = j - center_y;
+            const double gaussian = Kokkos::exp(
+                -(dx * dx + dy * dy) * inverse_two_sigma_squared);
+
+            // D2Q9 is weakly compressible, so initialize a small pressure
+            // perturbation around a uniform positive reference density.
+            rho(i, j) = background_density * (1.0 + relative_amplitude * gaussian);
+            u(i, j, 0) = 0.0;
+            u(i, j, 1) = 0.0;
+        });
+}
+
+Kokkos::View<double***> initialize_distribution(const Kokkos::View<int*[2]>& c)
+{
+    Kokkos::View<double***> f("westward_blob_distribution", X, Y, 9);
+    const double center_x = 0.5 * (X - 1);
+    const double center_y = 0.5 * (Y - 1);
+    const int smaller_dimension = X < Y ? X : Y;
+    const double sigma = smaller_dimension > 1 ? 0.2 * smaller_dimension : 1.0;
+
+    Kokkos::parallel_for(
+        "initialize_westward_blob_distribution",
+        Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0, 0}, {X, Y}),
+        KOKKOS_LAMBDA(const int i, const int j) {
+            const double dx = i - center_x;
+            const double dy = j - center_y;
+            const double blob = Kokkos::exp(-(dx * dx + dy * dy) / (2.0 * sigma * sigma));
+
+            for (int q = 0; q < 9; ++q) {
+                f(i, j, q) = (c(q, 0) == 1 && c(q, 1) == 1) ? blob : 0.0;
+            }
+        });
+
+    return f;
+}
+
+void write_csv(const Kokkos::View<double***>& distribution, const Kokkos::View<double**>& density, const std::string& filename)
+{
+    const auto distribution_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), distribution);
+    const auto density_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), density);
+
+    std::ofstream output(filename);
+    if (!output) {
+        throw std::runtime_error("Could not open output file: " + filename);
+    }
+
+    output << "x_index,y_index,population,distribution_value,density_value\n"
+           << std::setprecision(17);
+
+    for (std::size_t i = 0; i < distribution.extent(0); ++i) {
+        for (std::size_t j = 0; j < distribution.extent(1); ++j) {
+            for (std::size_t q = 0; q < distribution.extent(2); ++q) {
+                output << i << ','
+                       << j << ','
+                       << q << ','
+                       << distribution_host(i, j, q) << ','
+                       << density_host(i, j) << '\n';
+            }
+        }
+    }
+}

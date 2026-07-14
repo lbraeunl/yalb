@@ -86,6 +86,27 @@ cmake -B build -DCMAKE_BUILD_TYPE=Release
 cmake --build build
 ```
 
+## Visualizing density and flow
+
+`visualize_density.py` reads the exported D2Q9 populations, derives density and
+macroscopic velocity, and displays velocity streamlines over the density field.
+It needs NumPy, Matplotlib, and Pillow for GIF output (for example,
+`python3 -m pip install numpy matplotlib pillow`). On a headless node, add
+`--no-show` to save without opening a window.
+
+The example executable configures `X`, `Y`, `n`, and `filename` at the top of
+`executables/main.cpp`. It streams the distribution `n` times and rank 0 writes
+`distribution_1.csv` through `distribution_n.csv`; each row contains
+`x_index,y_index,population,value` for one D2Q9 population. Animate the entire
+sequence as a density heatmap with velocity streamlines using:
+
+```bash
+python3 visualize_density.py 'distribution_*.csv' --output distribution_animation.gif
+```
+
+You can also pass the directory containing the CSV files. The files are sorted
+by their numeric suffix, and `--fps 10` changes the animation speed.
+
 ## How to add code to the repository
 
 There are three places where you are asked to add code:
@@ -109,7 +130,7 @@ Adding files to `src/` is straightforward: create your files, e.g. `lj.h` and
 
 ```cmake
 add_library(lib STATIC 
-    hello.cpp
+    collision.cpp
     lj.cpp
 )
 ```

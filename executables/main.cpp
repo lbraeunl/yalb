@@ -1,9 +1,12 @@
-#include "hello.h"
-#include <iostream>
+#include "collision.h"
+#include "parameters.h"
+#include "streaming.h"
+#include "utils.h"
 #include <filesystem>
+#include <iostream>
 #include <mpi.h>
 #include <Kokkos_Core.hpp>
-
+#include <string>
 
 int main(int argc, char *argv[]) {
     int rank = 0, size = 1;
@@ -17,14 +20,36 @@ int main(int argc, char *argv[]) {
 
     std::cout << "Hello I am rank " << rank << " of " << size << "\n";
 
-    if (rank == 0)
-      hello_world();
+    {
+        const auto velocities = lattice_velocities();
+        Kokkos::View<double**> rho("density", X, Y);
+        Kokkos::View<double***> u("velocity", X, Y, 2);
 
-    auto input_path = "./simulation_test_input.txt";
+        create_gaussian_blob(rho, u);
+        auto distribution = compute_f_eq(rho, u, velocities);
 
-    if (not std::filesystem::exists(input_path))
-      std::cerr << "warning: could not find input file " << input_path << "\n";
+        if (rank == 0) {
+            write_csv(distribution, rho, filename_for_step(0));
+        }
 
+        for (int step = 1; step <= NUM_STEPS; ++step) {
+
+            auto f_eq = compute_f_eq(rho, u, velocities);
+            distribution = compute_f_new(distribution, f_eq);
+
+            distribution = streaming(distribution, velocities);
+
+            rho = compute_density(distribution);
+            u = compute_velocity(distribution, rho, velocities);
+
+            if (rank == 0) {
+                write_csv(distribution, rho, filename_for_step(step));
+                if (step == NUM_STEPS) {
+                    std::cout << "Saved results to file.\n";
+                }
+            }
+        }
+    }
     Kokkos::finalize();
     MPI_Finalize();
 

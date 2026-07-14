@@ -1,0 +1,29 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 21,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "cuda-release",
+      "displayName": "CUDA Release (GTX 1070)",
+      "description": "Build Kokkos with the CUDA backend for the GTX 1070 (Pascal, compute capability 6.1).",
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "Kokkos_ENABLE_CUDA": "ON",
+        "Kokkos_ARCH_PASCAL61": "ON",
+        "Kokkos_ENABLE_SERIAL": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "cuda-release",
+      "configurePreset": "cuda-release"
+    }
+  ]
+}
