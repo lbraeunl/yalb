@@ -17,6 +17,7 @@ Kokkos::View<double**> compute_density(Kokkos::View<double***> f)
     return density;
 }
 
+
 Kokkos::View<double***> compute_velocity(Kokkos::View<double***> f, Kokkos::View<double**> density, Kokkos::View<int*[2]> c)
 {
     Kokkos::View<double***> u("velocity", X, Y, 2);
@@ -34,6 +35,7 @@ Kokkos::View<double***> compute_velocity(Kokkos::View<double***> f, Kokkos::View
 
     return u;
 }
+
 
 Kokkos::View<double***> compute_f_eq(Kokkos::View<double**> density, Kokkos::View<double***> velocity, Kokkos::View<int*[2]> c)
 {
@@ -57,6 +59,7 @@ Kokkos::View<double***> compute_f_eq(Kokkos::View<double**> density, Kokkos::Vie
 
     return f_eq;
 }
+
 
 Kokkos::View<double***> compute_f_new(Kokkos::View<double***> distribution, Kokkos::View<double***> f_eq)
 {

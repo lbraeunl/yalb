@@ -27,11 +27,11 @@ int main(int argc, char *argv[]) {
 
         //create_gaussian_blob(rho, u);
         //create_uniform_with_bump(rho, u);
-        create_random_fields(rho, u);
+        create_sinusoidal(rho, u);
         auto distribution = compute_f_eq(rho, u, velocities);
 
         if (rank == 0) {
-            write_csv(distribution, rho, filename_for_step(0));
+            write_csv(distribution, rho, u, filename_for_step(0));
         }
 
         for (int step = 1; step <= NUM_STEPS; ++step) {
@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
             u = compute_velocity(distribution, rho, velocities);
 
             if (rank == 0) {
-                write_csv(distribution, rho, filename_for_step(step));
+                write_csv(distribution, rho, u, filename_for_step(step));
                 if (step == NUM_STEPS) {
                     std::cout << "Saved results to file.\n";
                 }

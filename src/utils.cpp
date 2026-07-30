@@ -7,13 +7,17 @@
 #include <Kokkos_Random.hpp>
 #include <stdexcept>
 
+
+
 std::string filename_for_step(int step)
 {
-    const std::filesystem::path filename("out/distribution.csv");
+    const std::filesystem::path filename("out/data/distribution.csv");
     return (filename.parent_path() /
             (filename.stem().string() + "_" + std::to_string(step) + filename.extension().string()))
         .string();
 }
+
+
 
 Kokkos::View<int*[2]> lattice_velocities()
 {
@@ -39,6 +43,8 @@ Kokkos::View<int*[2]> lattice_velocities()
     return c;
 }
 
+
+
 void create_gaussian_blob(const Kokkos::View<double**>& rho, const Kokkos::View<double***>& u)
 {
     constexpr double background_density = 1.0;
@@ -58,14 +64,13 @@ void create_gaussian_blob(const Kokkos::View<double**>& rho, const Kokkos::View<
             const double dy = j - center_y;
             const double gaussian = Kokkos::exp(
                 -(dx * dx + dy * dy) * inverse_two_sigma_squared);
-
-            // D2Q9 is weakly compressible, so initialize a small pressure
-            // perturbation around a uniform positive reference density.
             rho(i, j) = background_density * (1.0 + relative_amplitude * gaussian);
             u(i, j, 0) = 0.0;
             u(i, j, 1) = 0.0;
         });
 }
+
+
 
 void create_uniform_with_bump(const Kokkos::View<double**>& rho, const Kokkos::View<double***>& u)
 {
@@ -85,6 +90,8 @@ void create_uniform_with_bump(const Kokkos::View<double**>& rho, const Kokkos::V
             u(i, j, 1) = 0.0;
         });
 }
+
+
 
 void create_random_fields(const Kokkos::View<double**>& rho, const Kokkos::View<double***>& u)
 {
@@ -108,6 +115,26 @@ void create_random_fields(const Kokkos::View<double**>& rho, const Kokkos::View<
             random_pool.free_state(generator);
         });
 }
+
+
+
+void create_sinusoidal(const Kokkos::View<double**>& rho, const Kokkos::View<double***>& u)
+{
+    constexpr double density = 1.0;
+    constexpr double epsilon = 0.01;
+    constexpr double two_pi = 6.28318530717958647692;
+
+    Kokkos::parallel_for(
+        "initialize_sinusoidal_shear_wave",
+        Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0, 0}, {X, Y}),
+        KOKKOS_LAMBDA(const int i, const int j) {
+            rho(i, j) = density;
+            u(i, j, 0) = epsilon * Kokkos::sin(two_pi * j / Y);
+            u(i, j, 1) = 0.0;
+        });
+}
+
+
 
 Kokkos::View<double***> initialize_distribution(const Kokkos::View<int*[2]>& c)
 {
@@ -133,17 +160,28 @@ Kokkos::View<double***> initialize_distribution(const Kokkos::View<int*[2]>& c)
     return f;
 }
 
-void write_csv(const Kokkos::View<double***>& distribution, const Kokkos::View<double**>& density, const std::string& filename)
+
+
+void write_csv(
+    const Kokkos::View<double***>& distribution,
+    const Kokkos::View<double**>& density,
+    const Kokkos::View<double***>& velocity,
+    const std::string& filename)
 {
     const auto distribution_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), distribution);
     const auto density_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), density);
+    const auto velocity_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), velocity);
 
+    const std::filesystem::path output_path(filename);
+    if (output_path.has_parent_path()) {
+        std::filesystem::create_directories(output_path.parent_path());
+    }
     std::ofstream output(filename);
     if (!output) {
         throw std::runtime_error("Could not open output file: " + filename);
     }
 
-    output << "x_index,y_index,population,distribution_value,density_value\n"
+    output << "x_index,y_index,population,distribution_value,density_value,u_x,u_y\n"
            << std::setprecision(17);
 
     for (std::size_t i = 0; i < distribution.extent(0); ++i) {
@@ -153,7 +191,9 @@ void write_csv(const Kokkos::View<double***>& distribution, const Kokkos::View<d
                        << j << ','
                        << q << ','
                        << distribution_host(i, j, q) << ','
-                       << density_host(i, j) << '\n';
+                       << density_host(i, j) << ','
+                       << velocity_host(i, j, 0) << ','
+                       << velocity_host(i, j, 1) << '\n';
             }
         }
     }

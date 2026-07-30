@@ -1,6 +1,7 @@
 #include "collision.h"
 #include "parameters.h"
 #include "utils.h"
+#include <cmath>
 #include <gtest/gtest.h>
 
 TEST(CollisionTest, BasicAssertions)
@@ -79,4 +80,25 @@ TEST(InitializationTest, RandomFieldsStayInStableRanges)
 
     EXPECT_TRUE(density_varies);
     EXPECT_TRUE(velocity_varies);
+}
+
+TEST(InitializationTest, SinusoidalCreatesShearWaveAlongY)
+{
+    Kokkos::View<double**> rho("density", X, Y);
+    Kokkos::View<double***> u("velocity", X, Y, 2);
+
+    create_sinusoidal(rho, u);
+
+    const auto rho_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), rho);
+    const auto u_host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), u);
+    constexpr double epsilon = 0.01;
+    constexpr double two_pi = 6.28318530717958647692;
+
+    for (int i = 0; i < X; ++i) {
+        for (int j = 0; j < Y; ++j) {
+            EXPECT_DOUBLE_EQ(rho_host(i, j), 1.0);
+            EXPECT_NEAR(u_host(i, j, 0), epsilon * std::sin(two_pi * j / Y), 1e-15);
+            EXPECT_DOUBLE_EQ(u_host(i, j, 1), 0.0);
+        }
+    }
 }
