@@ -4,8 +4,7 @@
 Kokkos::View<double***> streaming(Kokkos::View<double***> f, Kokkos::View<double**> rho, Kokkos::View<int*[2]> c)
 {
     double weight[9] = {4.0 / 9.0, 1.0 / 9.0, 1.0 / 9.0, 1.0 / 9.0, 1.0 / 9.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0};
-    double wall_density = 1.0;
-    
+
     Kokkos::View<double***> f_next("f_next", X, Y, 9);
 
     Kokkos::parallel_for("streaming", Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0, 0}, {X, Y}),
@@ -17,20 +16,15 @@ Kokkos::View<double***> streaming(Kokkos::View<double***> f, Kokkos::View<double
                 int nj = j - c(k, 1);
                 int nk = k;
                 double correction = 0.0;
-                bool suppress_correction = false;
+                bool bounce = false;
 
                 if (ni < 0) {
                     if (LEFT_WALL.type == WallType::Periodic) {
                         ni += X;
                     }
                     else {
-                        ni = 0;
-                        nj = j;
-                        nk = opposite_direction(k);
-                        if (!suppress_correction) {
-                            correction = -6.0 * weight[k] * wall_density * c(nk, 1) * LEFT_WALL.velocity_y;
-                        }
-                        suppress_correction = true;
+                        bounce = true;
+                        correction += 6.0 * weight[k] * wall_density * c(k, 1) * LEFT_WALL.velocity_y;
                     }
                 }
 
@@ -39,13 +33,8 @@ Kokkos::View<double***> streaming(Kokkos::View<double***> f, Kokkos::View<double
                         ni -= X;
                     }
                     else {
-                        ni = X - 1;
-                        nj = j;
-                        nk = opposite_direction(k);
-                        if (!suppress_correction) {
-                            correction = -6.0 * weight[k] * wall_density * c(nk, 1) * RIGHT_WALL.velocity_y;
-                        }
-                        suppress_correction = true;
+                        bounce = true;
+                        correction += 6.0 * weight[k] * wall_density * c(k, 1) * RIGHT_WALL.velocity_y;
                     }
                 }
 
@@ -54,13 +43,8 @@ Kokkos::View<double***> streaming(Kokkos::View<double***> f, Kokkos::View<double
                         nj += Y;
                     }
                     else {
-                        ni = i;
-                        nj = 0;
-                        nk = opposite_direction(k);
-                        if (!suppress_correction) {
-                            correction = -6.0 * weight[k] * wall_density * c(nk, 0) * DOWN_WALL.velocity_x;
-                        }
-                        suppress_correction = true;
+                        bounce = true;
+                        correction += 6.0 * weight[k] * wall_density * c(k, 0) * DOWN_WALL.velocity_x;
                     }
                 }
 
@@ -69,14 +53,15 @@ Kokkos::View<double***> streaming(Kokkos::View<double***> f, Kokkos::View<double
                         nj -= Y;
                     }
                     else {
-                        ni = i;
-                        nj = Y - 1;
-                        nk = opposite_direction(k);
-                        if (!suppress_correction) {
-                            correction = -6.0 * weight[k] * wall_density * c(nk, 0) * UP_WALL.velocity_x;
-                        }
-                        suppress_correction = true;
+                        bounce = true;
+                        correction += 6.0 * weight[k] * wall_density * c(k, 0) * UP_WALL.velocity_x;
                     }
+                }
+
+                if (bounce) {
+                    ni = i;
+                    nj = j;
+                    nk = opposite_direction(k);
                 }
 
                 f_next(i, j, k) = f(ni, nj, nk) + correction;

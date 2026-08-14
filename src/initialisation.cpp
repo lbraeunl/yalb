@@ -71,7 +71,7 @@ void create_uniform_rest(const Kokkos::View<double**>& rho, const Kokkos::View<d
 void create_uniform_with_bump(const Kokkos::View<double**>& rho, const Kokkos::View<double***>& u)
 {
     constexpr double background_density = 1.0;
-    constexpr double center_density = 1.0;
+    constexpr double center_density = 1.01;
     constexpr int center_x = X / 2;
     constexpr int center_y = Y / 2;
 
@@ -82,7 +82,7 @@ void create_uniform_with_bump(const Kokkos::View<double**>& rho, const Kokkos::V
             rho(i, j) = (i == center_x && j == center_y)
                 ? center_density
                 : background_density;
-            u(i, j, 0) = 1.0;
+            u(i, j, 0) = 0.0;
             u(i, j, 1) = 0.0;
         });
 }
