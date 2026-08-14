@@ -1,5 +1,6 @@
 add_library(lib STATIC
     collision.cpp
+    initialisation.cpp
     streaming.cpp
     utils.cpp
 )

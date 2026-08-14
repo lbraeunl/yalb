@@ -1,4 +1,5 @@
 #include "collision.h"
+#include "initialisation.h"
 #include "parameters.h"
 #include "streaming.h"
 #include "utils.h"
@@ -25,9 +26,7 @@ int main(int argc, char *argv[]) {
         Kokkos::View<double**> rho("density", X, Y);
         Kokkos::View<double***> u("velocity", X, Y, 2);
 
-        //create_gaussian_blob(rho, u);
-        //create_uniform_with_bump(rho, u);
-        create_sinusoidal(rho, u);
+        create_uniform_rest(rho, u);
         auto distribution = compute_f_eq(rho, u, velocities);
 
         if (rank == 0) {
@@ -39,14 +38,16 @@ int main(int argc, char *argv[]) {
             auto f_eq = compute_f_eq(rho, u, velocities);
             distribution = compute_f_new(distribution, f_eq);
 
-            distribution = streaming(distribution, velocities);
+            distribution = streaming(distribution, rho, velocities);
 
             rho = compute_density(distribution);
             u = compute_velocity(distribution, rho, velocities);
 
             if (rank == 0) {
-                write_csv(distribution, rho, u, filename_for_step(step));
+                //write_csv(distribution, rho, u, filename_for_step(step));
                 if (step == NUM_STEPS) {
+
+                    write_csv(distribution, rho, u, filename_for_step(step));
                     std::cout << "Saved results to file.\n";
                 }
             }
