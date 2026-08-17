@@ -14,6 +14,7 @@
       "binaryDir": "${sourceDir}/build",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
+        "BUILD_TESTING": "ON",
         "Kokkos_ENABLE_CUDA": "ON",
         "Kokkos_ARCH_PASCAL61": "ON",
         "Kokkos_ENABLE_SERIAL": "ON"
@@ -27,6 +28,7 @@
       "binaryDir": "${sourceDir}/build-a100",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
+        "BUILD_TESTING": "OFF",
         "Kokkos_ENABLE_CUDA": "ON",
         "Kokkos_ARCH_AMPERE80": "ON",
         "Kokkos_ENABLE_SERIAL": "ON"
