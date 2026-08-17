@@ -107,6 +107,24 @@ python3 visualize_density.py 'distribution_*.csv' --output distribution_animatio
 You can also pass the directory containing the CSV files. The files are sorted
 by their numeric suffix, and `--fps 10` changes the animation speed.
 
+## MPI domain decomposition
+
+The solver decomposes the global lattice into contiguous strips along x. Rank
+`r` owns its balanced share of the global x columns plus one ghost column on
+each side; the y dimension is not decomposed. Run it, for example, with:
+
+```bash
+mpiexec -n 4 ./build/executables/main
+```
+
+Before every pull-streaming step, neighboring ranks exchange the three D2Q9
+populations that cross each x face. Channels 3, 6, and 7 travel left, while
+channels 1, 5, and 8 travel right. Physical left/right walls use
+`MPI_PROC_NULL`; periodic left/right walls wrap the first and last ranks. MPI
+buffers are staged through host memory, so the implementation does not require
+GPU-aware MPI. Rank 0 gathers the strips for CSV output, and mass and kinetic
+energy are computed over all ranks with `MPI_Allreduce`.
+
 ## How to add code to the repository
 
 There are three places where you are asked to add code:

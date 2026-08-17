@@ -10,7 +10,10 @@ if(NOT GTest_FOUND)
     FetchContent_MakeAvailable(googletest)
 endif()
 
-set(TEST_SOURCES test_collision.cpp)
+set(TEST_SOURCES
+    test_collision.cpp
+    test_domain_decomposition.cpp
+)
 
 list(APPEND TEST_SOURCES gtest_mpi_main.cpp)
 
@@ -21,3 +24,13 @@ target_include_directories(tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
 include(GoogleTest)
 gtest_discover_tests(tests)
+
+if(MPIEXEC_EXECUTABLE)
+    add_test(
+        NAME domain_decomposition_mpi_2
+        COMMAND ${MPIEXEC_EXECUTABLE} ${MPIEXEC_NUMPROC_FLAG} 2
+                $<TARGET_FILE:tests>
+                --gtest_filter=DomainDecompositionTest.*
+    )
+    set_tests_properties(domain_decomposition_mpi_2 PROPERTIES PROCESSORS 2)
+endif()

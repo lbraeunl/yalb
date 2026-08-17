@@ -1,4 +1,5 @@
 #include "initialisation.h"
+#include "domain_decomposition.h"
 #include "parameters.h"
 
 #include <Kokkos_Random.hpp>
@@ -60,6 +61,17 @@ void create_uniform_rest(const Kokkos::View<double**>& rho, const Kokkos::View<d
     Kokkos::parallel_for(
         "initialize_uniform_rest",
         Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0, 0}, {X, Y}),
+        KOKKOS_LAMBDA(const int i, const int j) {
+            rho(i, j) = 1.0;
+            u(i, j, 0) = 0.0;
+            u(i, j, 1) = 0.0;
+        });
+}
+
+
+void create_uniform_rest(const Kokkos::View<double**>& rho, const Kokkos::View<double***>& u, const Domain& domain)
+{
+    Kokkos::parallel_for("initialize_local_uniform_rest", Kokkos::MDRangePolicy<Kokkos::Rank<2>>({1, 0}, {domain.local_nx + 1, Y}),
         KOKKOS_LAMBDA(const int i, const int j) {
             rho(i, j) = 1.0;
             u(i, j, 0) = 0.0;

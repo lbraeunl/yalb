@@ -1,5 +1,7 @@
 add_library(lib STATIC
     collision.cpp
+    diagnostics.cpp
+    domain_decomposition.cpp
     initialisation.cpp
     streaming.cpp
     utils.cpp

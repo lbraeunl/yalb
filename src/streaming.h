@@ -3,7 +3,14 @@
 
 #include <Kokkos_Core.hpp>
 
+class Domain;
+
 Kokkos::View<double***> streaming(Kokkos::View<double***> f, Kokkos::View<double**> rho, Kokkos::View<int*[2]> c);
+Kokkos::View<double***> streaming(
+    Kokkos::View<double***> f,
+    Kokkos::View<double**> rho,
+    Kokkos::View<int*[2]> c,
+    const Domain& domain);
 
 KOKKOS_INLINE_FUNCTION
 int opposite_direction(int k)

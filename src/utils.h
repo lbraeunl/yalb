@@ -4,12 +4,22 @@
 #include <string>
 #include <Kokkos_Core.hpp>
 
+class Domain;
+
 std::string filename_for_step(int step);
 
 void write_csv(
     const Kokkos::View<double***>& distribution,
     const Kokkos::View<double**>& density,
     const Kokkos::View<double***>& velocity,
+    const std::string& filename);
+
+
+void write_csv_distributed(
+    const Kokkos::View<double***>& distribution,
+    const Kokkos::View<double**>& density,
+    const Kokkos::View<double***>& velocity,
+    const Domain& domain,
     const std::string& filename);
 
 #endif // UTILS_H
