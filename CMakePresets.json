@@ -18,12 +18,29 @@
         "Kokkos_ARCH_PASCAL61": "ON",
         "Kokkos_ENABLE_SERIAL": "ON"
       }
+    },
+    {
+      "name": "a100-release",
+      "displayName": "CUDA Release (NVIDIA A100)",
+      "description": "Build Kokkos with CUDA for an NVIDIA A100 (Ampere, compute capability 8.0).",
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build-a100",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "Kokkos_ENABLE_CUDA": "ON",
+        "Kokkos_ARCH_AMPERE80": "ON",
+        "Kokkos_ENABLE_SERIAL": "ON"
+      }
     }
   ],
   "buildPresets": [
     {
       "name": "cuda-release",
       "configurePreset": "cuda-release"
+    },
+    {
+      "name": "a100-release",
+      "configurePreset": "a100-release"
     }
   ]
 }
