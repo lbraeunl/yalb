@@ -1,9 +1,12 @@
 #include "utils.h"
+#include "diagnostics.h"
 #include "domain_decomposition.h"
+#include "parameters.h"
 
 #include <filesystem>
 #include <fstream>
 #include <iomanip>
+#include <iostream>
 #include <stdexcept>
 #include <vector>
 
@@ -14,6 +17,43 @@ std::string filename_for_step(int step)
     return (filename.parent_path() /
             (filename.stem().string() + "_" + std::to_string(step) + filename.extension().string()))
         .string();
+}
+
+
+void print_initial_state(
+    const int rank,
+    const int size,
+    const char* solver_name,
+    const double mass,
+    const double kinetic_energy)
+{
+    if (rank == 0) {
+        std::cout << "Running " << solver_name << " with " << size
+                  << " MPI process(es)\n";
+        std::cout << "Initial mass: " << mass
+                  << ", kinetic energy: " << kinetic_energy << '\n';
+    }
+}
+
+
+void print_final_state(
+    const int rank,
+    const int size,
+    const double mass,
+    const double kinetic_energy,
+    const double elapsed_seconds)
+{
+    if (rank == 0) {
+        if constexpr (WRITE_FIELD_OUTPUT) {
+            std::cout << "Saved results to file.\n";
+        }
+        std::cout << "Final mass: " << mass
+                  << ", kinetic energy: " << kinetic_energy << '\n';
+        std::cout << "MPI size: " << size << '\n';
+        std::cout << "Time-to-solution: " << elapsed_seconds << " s\n";
+        std::cout << "MLURPS: "
+                  << mlurps(X, Y, NUM_STEPS, elapsed_seconds) << '\n';
+    }
 }
 
 
@@ -55,12 +95,12 @@ void write_csv(
 }
 
 
-void write_csv_distributed(
+void write_csv(
     const Kokkos::View<double***>& distribution,
     const Kokkos::View<double**>& density,
     const Kokkos::View<double***>& velocity,
-    const Domain& domain,
-    const std::string& filename)
+    const std::string& filename,
+    const Domain& domain)
 {
     int rank = 0;
     int size = 1;

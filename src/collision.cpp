@@ -1,59 +1,46 @@
 #include "collision.h"
+#include "domain_decomposition.h"
 #include "parameters.h"
 
-Kokkos::View<double**> compute_density(Kokkos::View<double***> f)
+namespace {
+
+void compute_density_range(const Kokkos::View<double***>& f, const Kokkos::View<double**>& rho, const int x_begin, const int x_end)
 {
-    const int nx = f.extent_int(0);
     const int ny = f.extent_int(1);
-
-    Kokkos::View<double**> density("density", nx, ny);
-
-    Kokkos::parallel_for("compute_density", Kokkos::MDRangePolicy<Kokkos::Rank<2>>({1, 0}, {nx - 1, ny}),
+    Kokkos::parallel_for("compute_density",Kokkos::MDRangePolicy<Kokkos::Rank<2>>({x_begin, 0}, {x_end, ny}),
         KOKKOS_LAMBDA(const int i, const int j) {
             double sum = 0.0;
             for (int k = 0; k < 9; ++k) {
                 sum += f(i, j, k);
             }
-            density(i, j) = sum;
+            rho(i, j) = sum;
         });
-
-    return density;
 }
 
 
-Kokkos::View<double***> compute_velocity(Kokkos::View<double***> f, Kokkos::View<double**> density, Kokkos::View<int*[2]> c)
+void compute_velocity_range(const Kokkos::View<double***>& f, const Kokkos::View<double**>& rho, const Kokkos::View<int*[2]>& c, const Kokkos::View<double***>& u, const int x_begin, const int x_end)
 {
-    const int nx = f.extent_int(0);
     const int ny = f.extent_int(1);
-   
-    Kokkos::View<double***> u("velocity", nx, ny, 2);
-
-    Kokkos::parallel_for("compute_velocity", Kokkos::MDRangePolicy<Kokkos::Rank<2>>({1, 0}, {nx - 1, ny}),
+    Kokkos::parallel_for("compute_velocity",Kokkos::MDRangePolicy<Kokkos::Rank<2>>({x_begin, 0}, {x_end, ny}),
         KOKKOS_LAMBDA(const int i, const int j) {
             for (int d = 0; d < 2; ++d) {
                 double sum = 0.0;
                 for (int k = 0; k < 9; ++k) {
                     sum += f(i, j, k) * c(k, d);
                 }
-                u(i, j, d) = sum / density(i, j);
+                u(i, j, d) = sum / rho(i, j);
             }
         });
-
-    return u;
 }
 
 
-Kokkos::View<double***> compute_f_eq(Kokkos::View<double**> density, Kokkos::View<double***> velocity, Kokkos::View<int*[2]> c)
+void compute_f_eq_range(const Kokkos::View<double**>& rho, const Kokkos::View<double***>& u, const Kokkos::View<int*[2]>& c, const Kokkos::View<double***>& f_eq, const int x_begin, const int x_end)
 {
-    const int nx = density.extent_int(0);
-    const int ny = density.extent_int(1);
-
-    Kokkos::View<double***> f_eq("equilibrium_distribution", nx, ny, 9);
-
-    Kokkos::parallel_for("compute_f_eq", Kokkos::MDRangePolicy<Kokkos::Rank<2>>({1, 0}, {nx - 1, ny}),
+    const int ny = rho.extent_int(1);
+    Kokkos::parallel_for("compute_f_eq",Kokkos::MDRangePolicy<Kokkos::Rank<2>>({x_begin, 0}, {x_end, ny}),
         KOKKOS_LAMBDA(const int i, const int j) {
-            const double ux = velocity(i, j, 0);
-            const double uy = velocity(i, j, 1);
+            const double ux = u(i, j, 0);
+            const double uy = u(i, j, 1);
             const double u_squared = ux * ux + uy * uy;
 
             for (int k = 0; k < 9; ++k) {
@@ -62,26 +49,103 @@ Kokkos::View<double***> compute_f_eq(Kokkos::View<double**> density, Kokkos::Vie
                                             : 1.0 / 36.0;
                 const double c_dot_u = c(k, 0) * ux + c(k, 1) * uy;
 
-                f_eq(i, j, k) = weight * density(i, j) * (1.0 + 3.0 * c_dot_u + 4.5 * c_dot_u * c_dot_u - 1.5 * u_squared);
+                f_eq(i, j, k) = weight * rho(i, j)
+                    * (1.0 + 3.0 * c_dot_u
+                       + 4.5 * c_dot_u * c_dot_u
+                       - 1.5 * u_squared);
             }
         });
-
-    return f_eq;
 }
 
 
-Kokkos::View<double***> compute_f_new(Kokkos::View<double***> distribution, Kokkos::View<double***> f_eq)
+void compute_f_new_range(const Kokkos::View<double***>& f, const Kokkos::View<double***>& f_eq, const Kokkos::View<double***>& f_post_collision, const int x_begin, const int x_end)
 {
-    const int nx = distribution.extent_int(0);
-    const int ny = distribution.extent_int(1);
-
-    Kokkos::View<double***> f_new("post_collision_distribution", nx, ny, 9);
+    const int ny = f.extent_int(1);
     constexpr double omega = 1.0 / TAU;
-
-    Kokkos::parallel_for("compute_f_new", Kokkos::MDRangePolicy<Kokkos::Rank<3>>({1, 0, 0}, {nx - 1, ny, 9}),
+    Kokkos::parallel_for("compute_f_new",Kokkos::MDRangePolicy<Kokkos::Rank<3>>({x_begin, 0, 0}, {x_end, ny, 9}),
         KOKKOS_LAMBDA(const int i, const int j, const int k) {
-            f_new(i, j, k) = distribution(i, j, k) + omega * (f_eq(i, j, k) - distribution(i, j, k));
+            f_post_collision(i, j, k) = f(i, j, k)
+                + omega * (f_eq(i, j, k) - f(i, j, k));
         });
+}
 
-    return f_new;
+} // namespace
+
+
+void compute_density(
+    const Kokkos::View<double***>& f,
+    const Kokkos::View<double**>& rho)
+{
+    compute_density_range(f, rho, 0, f.extent_int(0));
+}
+
+
+void compute_density(
+    const Kokkos::View<double***>& f,
+    const Kokkos::View<double**>& rho,
+    const Domain& domain)
+{
+    compute_density_range(f, rho, 1, domain.local_nx + 1);
+}
+
+
+void compute_velocity(
+    const Kokkos::View<double***>& f,
+    const Kokkos::View<double**>& rho,
+    const Kokkos::View<int*[2]>& c,
+    const Kokkos::View<double***>& u)
+{
+    compute_velocity_range(f, rho, c, u, 0, f.extent_int(0));
+}
+
+
+void compute_velocity(
+    const Kokkos::View<double***>& f,
+    const Kokkos::View<double**>& rho,
+    const Kokkos::View<int*[2]>& c,
+    const Kokkos::View<double***>& u,
+    const Domain& domain)
+{
+    compute_velocity_range(f, rho, c, u, 1, domain.local_nx + 1);
+}
+
+
+void compute_f_eq(
+    const Kokkos::View<double**>& rho,
+    const Kokkos::View<double***>& u,
+    const Kokkos::View<int*[2]>& c,
+    const Kokkos::View<double***>& f_eq)
+{
+    compute_f_eq_range(rho, u, c, f_eq, 0, rho.extent_int(0));
+}
+
+
+void compute_f_eq(
+    const Kokkos::View<double**>& rho,
+    const Kokkos::View<double***>& u,
+    const Kokkos::View<int*[2]>& c,
+    const Kokkos::View<double***>& f_eq,
+    const Domain& domain)
+{
+    compute_f_eq_range(rho, u, c, f_eq, 1, domain.local_nx + 1);
+}
+
+
+void compute_f_new(
+    const Kokkos::View<double***>& f,
+    const Kokkos::View<double***>& f_eq,
+    const Kokkos::View<double***>& f_post_collision)
+{
+    compute_f_new_range(f, f_eq, f_post_collision, 0, f.extent_int(0));
+}
+
+
+void compute_f_new(
+    const Kokkos::View<double***>& f,
+    const Kokkos::View<double***>& f_eq,
+    const Kokkos::View<double***>& f_post_collision,
+    const Domain& domain)
+{
+    compute_f_new_range(
+        f, f_eq, f_post_collision, 1, domain.local_nx + 1);
 }

@@ -6,6 +6,10 @@ project(my-fantastic-simulation-code LANGUAGES C CXX VERSION 0.1)
 
 include(CTest)
 
+set(YALB_LATTICE_SIDE "" CACHE STRING "Override X and Y with a square lattice side length")
+set(YALB_NUM_STEPS "" CACHE STRING "Override the number of simulation steps")
+option(YALB_DISABLE_FIELD_OUTPUT "Disable distribution CSV output" OFF)
+
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)

@@ -2,11 +2,9 @@
 #include "domain_decomposition.h"
 #include "parameters.h"
 
-Kokkos::View<double***> streaming(Kokkos::View<double***> f, Kokkos::View<double**> rho, Kokkos::View<int*[2]> c)
+void streaming(const Kokkos::View<double***>& f, const Kokkos::View<double**>& rho, const Kokkos::View<int*[2]>& c, const Kokkos::View<double***>& f_next)
 {
-    double weight[9] = {4.0 / 9.0, 1.0 / 9.0, 1.0 / 9.0, 1.0 / 9.0, 1.0 / 9.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0};
-
-    Kokkos::View<double***> f_next("f_next", X, Y, 9);
+    constexpr double weight[9] = {4.0 / 9.0, 1.0 / 9.0, 1.0 / 9.0, 1.0 / 9.0, 1.0 / 9.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0, 1.0 / 36.0};
 
     Kokkos::parallel_for("streaming", Kokkos::MDRangePolicy<Kokkos::Rank<2>>({0, 0}, {X, Y}),
         KOKKOS_LAMBDA(const int i, const int j) {
@@ -68,10 +66,9 @@ Kokkos::View<double***> streaming(Kokkos::View<double***> f, Kokkos::View<double
                 f_next(i, j, k) = f(ni, nj, nk) + correction;
             }
         });
-    return f_next;
 }
 
-Kokkos::View<double***> streaming(Kokkos::View<double***> f, Kokkos::View<double**> rho, Kokkos::View<int*[2]> c, const Domain& domain)
+void streaming(const Kokkos::View<double***>& f, const Kokkos::View<double**>& rho, const Kokkos::View<int*[2]>& c, const Kokkos::View<double***>& f_next, const Domain& domain)
 {
     constexpr double weight[9] = {
         4.0 / 9.0,
@@ -82,8 +79,6 @@ Kokkos::View<double***> streaming(Kokkos::View<double***> f, Kokkos::View<double
     const size_t ny = f.extent(1);
     const int x_offset = domain.x_offset;
 
-    Kokkos::View<double***> f_next("local_f_next", nx, ny, 9);
-    
     Kokkos::parallel_for("local_streaming", Kokkos::MDRangePolicy<Kokkos::Rank<2>>({1, 0},{nx-1, ny}),
         KOKKOS_LAMBDA(const int i, const int j) {
             const double wall_density = rho(i, j);
@@ -130,5 +125,4 @@ Kokkos::View<double***> streaming(Kokkos::View<double***> f, Kokkos::View<double
                 f_next(i, j, k) = f(ni, nj, nk) + correction;
             }
         });
-    return f_next;
 }

@@ -101,8 +101,10 @@ TEST(DomainDecompositionTest, StreamsAcrossAnInternalStripBoundary)
     Kokkos::deep_copy(rho, rho_initial);
 
     halo_exchange(f, domain);
-    const auto streamed = streaming(f, rho, c, domain);
-    const auto host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), streamed);
+    Kokkos::View<double***> f_next(
+        "stream_test_next_distribution", domain.local_nx + 2, ny, 9);
+    streaming(f, rho, c, f_next, domain);
+    const auto host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), f_next);
     constexpr int j = 2;
     if (rank > 0) {
         const int source_global_x = domain.x_offset - 1;

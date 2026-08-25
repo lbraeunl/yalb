@@ -5,11 +5,16 @@
 
 class Domain;
 
-Kokkos::View<double***> streaming(Kokkos::View<double***> f, Kokkos::View<double**> rho, Kokkos::View<int*[2]> c);
-Kokkos::View<double***> streaming(
-    Kokkos::View<double***> f,
-    Kokkos::View<double**> rho,
-    Kokkos::View<int*[2]> c,
+void streaming(
+    const Kokkos::View<double***>& f,
+    const Kokkos::View<double**>& rho,
+    const Kokkos::View<int*[2]>& c,
+    const Kokkos::View<double***>& f_next);
+void streaming(
+    const Kokkos::View<double***>& f,
+    const Kokkos::View<double**>& rho,
+    const Kokkos::View<int*[2]>& c,
+    const Kokkos::View<double***>& f_next,
     const Domain& domain);
 
 KOKKOS_INLINE_FUNCTION

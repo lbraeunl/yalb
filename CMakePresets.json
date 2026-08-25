@@ -7,6 +7,18 @@
   },
   "configurePresets": [
     {
+      "name": "cpu-openmp-release",
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build-cpu-openmp",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "BUILD_TESTING": "OFF",
+        "Kokkos_ENABLE_CUDA": "OFF",
+        "Kokkos_ENABLE_OPENMP": "ON",
+        "Kokkos_ENABLE_SERIAL": "ON"
+      }
+    },
+    {
       "name": "cuda-release",
       "displayName": "CUDA Release (GTX 1070)",
       "description": "Build Kokkos with the CUDA backend for the GTX 1070 (Pascal, compute capability 6.1).",

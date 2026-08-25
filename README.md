@@ -125,6 +125,29 @@ buffers are staged through host memory, so the implementation does not require
 GPU-aware MPI. Rank 0 gathers the strips for CSV output, and mass and kinetic
 energy are computed over all ranks with `MPI_Allreduce`.
 
+## Single-GPU benchmark sweep
+
+`benchmark.sh` builds and runs the ghost-free single-grid solver for a range of
+square lattice sizes. By default it uses the `a100-release` preset, performs
+three repetitions per size, disables field CSV output, and writes the raw
+measurements to `out/benchmark.csv`:
+
+```bash
+./benchmark.sh
+```
+
+Pass side lengths to replace the default sweep, or use environment variables to
+adjust the run:
+
+```bash
+BENCHMARK_REPETITIONS=5 BENCHMARK_STEPS=4000 ./benchmark.sh 64 128 256 512
+BENCHMARK_PRESET=cuda-release ./benchmark.sh 32 64 128
+```
+
+Set `BENCHMARK_APPEND=1` to append to an existing results file. The CSV records
+the side length, actual lattice-point count, step count, repetition, elapsed
+time, and MLURPS for each run.
+
 ## How to add code to the repository
 
 There are three places where you are asked to add code:
