@@ -23,7 +23,8 @@ void run_single_grid(const int rank, const int size)
     Kokkos::View<double***> f_post_collision("post_collision_distribution", X, Y, 9);
     Kokkos::View<double***> f_next("next_distribution", X, Y, 9);
 
-    create_uniform_rest(rho, u);
+    //create_uniform_rest(rho, u);
+    create_sinusoidal(rho, u);
     compute_f_eq(rho, u, c, f);
 
     const double initial_mass = global_mass(rho);

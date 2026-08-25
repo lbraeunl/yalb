@@ -36,7 +36,7 @@ include(CMakeFindDependencyMacro)
 
 #This needs to go above the KokkosTargets in case
 #the Kokkos targets depend in some way on the TPL imports
-FIND_DEPENDENCY(OpenMP REQUIRED COMPONENTS CXX)
+
 
 get_filename_component(Kokkos_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
 include("${Kokkos_CMAKE_DIR}/KokkosTargets.cmake")

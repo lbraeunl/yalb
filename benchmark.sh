@@ -14,7 +14,7 @@ jobs="${BENCHMARK_BUILD_JOBS:-2}"
 if (($# > 0)); then
     sides=("$@")
 else
-    sides=(32 48 64 96 128 192 256 384 512 768 1024 1536 2048 3072)
+    sides=(16 24 32 48 64 96 128 192 256 384 512 768 1024 1536 2048 3072)
 fi
 
 for value in "$steps" "$repetitions" "$jobs" "${sides[@]}"; do

@@ -45,6 +45,20 @@
         "Kokkos_ARCH_AMPERE80": "ON",
         "Kokkos_ENABLE_SERIAL": "ON"
       }
+    },
+    {
+      "name": "cpu-serial-release",
+      "displayName": "CPU Serial Release",
+      "description": "Build Kokkos with the single-threaded Serial backend.",
+      "generator": "Unix Makefiles",
+      "binaryDir": "${sourceDir}/build-cpu-serial",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "BUILD_TESTING": "OFF",
+        "Kokkos_ENABLE_CUDA": "OFF",
+        "Kokkos_ENABLE_OPENMP": "OFF",
+        "Kokkos_ENABLE_SERIAL": "ON"
+      }
     }
   ],
   "buildPresets": [
@@ -55,6 +69,10 @@
     {
       "name": "a100-release",
       "configurePreset": "a100-release"
+    },
+    {
+      "name": "cpu-serial-release",
+      "configurePreset": "cpu-serial-release"
     }
   ]
 }
