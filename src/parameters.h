@@ -2,16 +2,16 @@
 #define PARAMETERS_H
 
 
-inline constexpr int X = 128;
-inline constexpr int Y = 128;
+inline constexpr int X = 6000;
+inline constexpr int Y = 6000;
 
-inline constexpr int NUM_STEPS = 8000;
+inline constexpr int NUM_STEPS = 2000;
 
 inline constexpr double TAU = 0.59;
 
-inline constexpr bool USE_DOMAIN_DECOMPOSITION = false;
+inline constexpr bool USE_DOMAIN_DECOMPOSITION = true;
 
-inline constexpr bool WRITE_FIELD_OUTPUT = true;
+inline constexpr bool WRITE_FIELD_OUTPUT = false;
 
 enum class WallType {
     Periodic,
