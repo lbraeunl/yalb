@@ -27,7 +27,7 @@ struct WallProperties {
 inline constexpr WallProperties LEFT_WALL{WallType::Rigid, 0.0, 0.0};
 inline constexpr WallProperties RIGHT_WALL{WallType::Rigid, 0.0, 0.0};
 inline constexpr WallProperties DOWN_WALL{WallType::Rigid, 0.0, 0.0};
-inline constexpr WallProperties UP_WALL{WallType::Rigid, 1.0, 0.0};
+inline constexpr WallProperties UP_WALL{WallType::Rigid, 0.1, 0.0};
 
 inline constexpr bool PERIODIC_X = (LEFT_WALL.type == WallType::Periodic && RIGHT_WALL.type == WallType::Periodic);
 
