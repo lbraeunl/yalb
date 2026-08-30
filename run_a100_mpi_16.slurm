@@ -31,4 +31,4 @@ echo "Running ${SLURM_NTASKS} MPI rank(s) on ${SLURM_JOB_NUM_NODES} node(s)."
 echo "Results will be stored in ${run_directory}/out/data."
 nvidia-smi --query-gpu=index,name,uuid --format=csv
 
-time mpirun "${executable}"
+time mpirun --bind-to none "${executable}"
