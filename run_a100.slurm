@@ -1,9 +1,9 @@
 #!/bin/bash -x
 #SBATCH --partition=dev_gpu_a100_il
 #SBATCH --nodes=1
-#SBATCH --ntasks-per-node=1
+#SBATCH --ntasks-per-node=2
 #SBATCH --cpus-per-task=16
-#SBATCH --gpus-per-node=1
+#SBATCH --gpus-per-node=2
 #SBATCH --time=00:30:00
 #SBATCH --job-name=lbm
 #SBATCH --output=slurm-%x-%j.out
@@ -15,6 +15,10 @@ set -euo pipefail
 module purge
 module load toolkit/nvidia-hpc-sdk/25.1
 module load mpi/openmpi/5.0-nvidia-25.1-nompi
+
+# Work around UCX misclassifying CUDA allocations as host memory. Without
+# this, intra-node CUDA-aware MPI transfers can segfault in uct_mm_ep_am_bcopy.
+export UCX_MEMTYPE_CACHE=n
 
 executable="${SLURM_SUBMIT_DIR}/build-a100/executables/main"
 run_directory="${SLURM_SUBMIT_DIR}/results/${SLURM_JOB_ID}"

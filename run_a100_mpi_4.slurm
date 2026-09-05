@@ -15,6 +15,9 @@ module purge
 module load toolkit/nvidia-hpc-sdk/25.1
 module load mpi/openmpi/5.0-nvidia-25.1-nompi
 
+# Ensure UCX identifies Kokkos CUDA allocations as device memory.
+export UCX_MEMTYPE_CACHE=n
+
 executable="${SLURM_SUBMIT_DIR}/build-a100/executables/main"
 run_directory="${SLURM_SUBMIT_DIR}/results/a100-mpi-4/${SLURM_JOB_ID}"
 
