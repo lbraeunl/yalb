@@ -12,8 +12,8 @@
 set -euo pipefail
 
 module purge
-module load compiler/gnu mpi/openmpi
 module load toolkit/nvidia-hpc-sdk/25.1
+module load mpi/openmpi/5.0-nvidia-25.1-nompi
 
 executable="${SLURM_SUBMIT_DIR}/build-a100/executables/main"
 run_directory="${SLURM_SUBMIT_DIR}/results/a100-mpi-16/${SLURM_JOB_ID}"

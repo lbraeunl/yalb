@@ -50,7 +50,8 @@ TEST(DomainDecompositionTest, ExchangesOnlyCrossingPopulations)
     }
     Kokkos::deep_copy(f, initial);
 
-    halo_exchange(f, domain);
+    HaloBuffers halo_buffers(5);
+    halo_exchange(f, domain, halo_buffers);
     const auto host = Kokkos::create_mirror_view_and_copy(Kokkos::HostSpace(), f);
     for (int j = 0; j < 5; ++j) {
         if (rank > 0) {
@@ -100,7 +101,8 @@ TEST(DomainDecompositionTest, StreamsAcrossAnInternalStripBoundary)
     Kokkos::deep_copy(f, f_initial);
     Kokkos::deep_copy(rho, rho_initial);
 
-    halo_exchange(f, domain);
+    HaloBuffers halo_buffers(ny);
+    halo_exchange(f, domain, halo_buffers);
     Kokkos::View<double***> f_next(
         "stream_test_next_distribution", domain.local_nx + 2, ny, 9);
     streaming(f, rho, c, f_next, domain);

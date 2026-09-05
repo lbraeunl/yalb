@@ -31,6 +31,35 @@ public:
     }
 };
 
-void halo_exchange(const Kokkos::View<double***>& distribution, const Domain& domain);
+class HaloBuffers {
+public:
+    explicit HaloBuffers(int ny);
+
+private:
+    friend void halo_exchange(
+        const Kokkos::View<double***>& distribution,
+        const Domain& domain,
+        HaloBuffers& buffers);
+
+    Kokkos::View<double*> send_left_;
+    Kokkos::View<double*> send_right_;
+    Kokkos::View<double*> receive_left_;
+    Kokkos::View<double*> receive_right_;
+
+#ifndef YALB_ENABLE_CUDA_AWARE_MPI
+    Kokkos::View<double*, Kokkos::HostSpace> send_left_host_;
+    Kokkos::View<double*, Kokkos::HostSpace> send_right_host_;
+    Kokkos::View<double*, Kokkos::HostSpace> receive_left_host_;
+    Kokkos::View<double*, Kokkos::HostSpace> receive_right_host_;
+#endif
+};
+
+bool cuda_aware_mpi_is_enabled();
+bool cuda_aware_mpi_is_available();
+
+void halo_exchange(
+    const Kokkos::View<double***>& distribution,
+    const Domain& domain,
+    HaloBuffers& buffers);
 
 #endif // DOMAIN_DECOMPOSITION_H

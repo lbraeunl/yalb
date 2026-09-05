@@ -13,6 +13,7 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "BUILD_TESTING": "OFF",
+        "YALB_ENABLE_CUDA_AWARE_MPI": "OFF",
         "Kokkos_ENABLE_CUDA": "OFF",
         "Kokkos_ENABLE_OPENMP": "ON",
         "Kokkos_ENABLE_SERIAL": "ON"
@@ -27,6 +28,7 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "BUILD_TESTING": "ON",
+        "YALB_ENABLE_CUDA_AWARE_MPI": "OFF",
         "Kokkos_ENABLE_CUDA": "ON",
         "Kokkos_ARCH_PASCAL61": "ON",
         "Kokkos_ENABLE_SERIAL": "ON"
@@ -41,6 +43,7 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "BUILD_TESTING": "OFF",
+        "YALB_ENABLE_CUDA_AWARE_MPI": "ON",
         "Kokkos_ENABLE_CUDA": "ON",
         "Kokkos_ARCH_AMPERE80": "ON",
         "Kokkos_ENABLE_SERIAL": "ON"
@@ -55,6 +58,7 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "BUILD_TESTING": "OFF",
+        "YALB_ENABLE_CUDA_AWARE_MPI": "OFF",
         "Kokkos_ENABLE_CUDA": "OFF",
         "Kokkos_ENABLE_OPENMP": "OFF",
         "Kokkos_ENABLE_SERIAL": "ON"

@@ -69,6 +69,7 @@ void run_domain_decomposed(const int rank, const int size)
     Kokkos::View<double***> f("distribution", local_X, Y, 9);
     Kokkos::View<double***> f_post_collision("post_collision_distribution", local_X, Y, 9);
     Kokkos::View<double***> f_next("next_distribution", local_X, Y, 9);
+    HaloBuffers halo_buffers(Y);
 
     create_uniform_rest(rho, u, domain);
     compute_f_eq(rho, u, c, f, domain);
@@ -86,7 +87,7 @@ void run_domain_decomposed(const int rank, const int size)
     for (int step = 1; step <= NUM_STEPS; ++step) {
         compute_f_eq(rho, u, c, f_eq, domain);
         compute_f_new(f, f_eq, f_post_collision, domain);
-        halo_exchange(f_post_collision, domain);
+        halo_exchange(f_post_collision, domain, halo_buffers);
         streaming(f_post_collision, rho, c, f_next, domain);
         std::swap(f, f_next);
         compute_density(f, rho, domain);
@@ -116,6 +117,25 @@ int main(int argc, char* argv[])
     int size = 1;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+    if (cuda_aware_mpi_is_enabled() && !cuda_aware_mpi_is_available()) {
+        if (rank == 0) {
+            std::cerr
+                << "This build requires CUDA-aware MPI, but the active MPI "
+                << "library does not report CUDA support. Load the requested "
+                << "CUDA-aware Open MPI module and try again.\n";
+        }
+        Kokkos::finalize();
+        MPI_Finalize();
+        return 2;
+    }
+
+    if (rank == 0) {
+        std::cout << "Halo exchange: "
+                  << (cuda_aware_mpi_is_enabled()
+                          ? "CUDA-aware MPI with device buffers\n"
+                          : "host-staged MPI\n");
+    }
 
     int exit_code = 0;
     {

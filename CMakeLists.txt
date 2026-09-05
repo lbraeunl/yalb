@@ -9,6 +9,7 @@ include(CTest)
 set(YALB_LATTICE_SIDE "" CACHE STRING "Override X and Y with a square lattice side length")
 set(YALB_NUM_STEPS "" CACHE STRING "Override the number of simulation steps")
 option(YALB_DISABLE_FIELD_OUTPUT "Disable distribution CSV output" OFF)
+option(YALB_ENABLE_CUDA_AWARE_MPI "Pass CUDA device buffers directly to MPI" OFF)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
