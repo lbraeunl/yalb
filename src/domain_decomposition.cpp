@@ -2,11 +2,6 @@
 
 #include <stdexcept>
 
-#if defined(YALB_ENABLE_CUDA_AWARE_MPI) && __has_include(<mpi-ext.h>)
-#include <mpi-ext.h>
-#define YALB_HAS_MPI_CUDA_QUERY 1
-#endif
-
 namespace {
 
 int halo_buffer_size(const int ny)
@@ -39,16 +34,6 @@ bool cuda_aware_mpi_is_enabled()
 {
 #ifdef YALB_ENABLE_CUDA_AWARE_MPI
     return true;
-#else
-    return false;
-#endif
-}
-
-
-bool cuda_aware_mpi_is_available()
-{
-#if defined(YALB_HAS_MPI_CUDA_QUERY) && defined(MPIX_CUDA_AWARE_SUPPORT)
-    return MPIX_Query_cuda_support() == 1;
 #else
     return false;
 #endif

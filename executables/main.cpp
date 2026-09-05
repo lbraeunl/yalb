@@ -118,18 +118,6 @@ int main(int argc, char* argv[])
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-    if (cuda_aware_mpi_is_enabled() && !cuda_aware_mpi_is_available()) {
-        if (rank == 0) {
-            std::cerr
-                << "This build requires CUDA-aware MPI, but the active MPI "
-                << "library does not report CUDA support. Load the requested "
-                << "CUDA-aware Open MPI module and try again.\n";
-        }
-        Kokkos::finalize();
-        MPI_Finalize();
-        return 2;
-    }
-
     if (rank == 0) {
         std::cout << "Halo exchange: "
                   << (cuda_aware_mpi_is_enabled()

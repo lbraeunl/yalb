@@ -55,7 +55,6 @@ private:
 };
 
 bool cuda_aware_mpi_is_enabled();
-bool cuda_aware_mpi_is_available();
 
 void halo_exchange(
     const Kokkos::View<double***>& distribution,
