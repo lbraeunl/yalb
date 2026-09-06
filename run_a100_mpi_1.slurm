@@ -33,5 +33,11 @@ cd "${run_directory}"
 echo "Running ${SLURM_NTASKS} MPI rank(s) on ${SLURM_JOB_NUM_NODES} node(s)."
 echo "Results will be stored in ${run_directory}/out/data."
 nvidia-smi --query-gpu=index,name,uuid --format=csv
+ompi_info --parsable --all \
+    | grep 'mpi_built_with_cuda_support:value' || true
+ucx_info -d | grep -Ei 'cuda|gdr' || true
 
-time mpirun --bind-to none "${executable}"
+time mpirun --bind-to none --mca pml ucx \
+    -x UCX_MEMTYPE_CACHE \
+    -x UCX_TLS=self,rc,sm,cuda_copy,gdr_copy,cuda_ipc \
+    "${executable}"
